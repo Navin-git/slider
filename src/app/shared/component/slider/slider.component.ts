@@ -8,6 +8,8 @@ import {
   signal,
   effect,
   ContentChild,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -24,6 +26,7 @@ export type slidesDataType = {
   imports: [CommonModule],
   templateUrl: './slider.component.html',
   styleUrls: ['./slider.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SliderComponent {
   // Inputs from the parent component
@@ -41,6 +44,7 @@ export class SliderComponent {
   offsetX = 0; // Offset X-coordinate for dragging
   isDragging = false;
 
+  private cdRef = inject(ChangeDetectorRef);
   private element = inject(ElementRef<HTMLElement>)['nativeElement'];
   private resizeObserver: ResizeObserver | null = null;
   private autoSlideInterval: any;

@@ -3,12 +3,11 @@ import {
   Input,
   ViewChild,
   ElementRef,
-  ContentChild,
-  HostListener,
   inject,
   WritableSignal,
   signal,
   effect,
+  ContentChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -19,7 +18,6 @@ export type slidesDataType = {
     [key: string]: string;
   };
 };
-
 @Component({
   selector: 'app-slider',
   standalone: true,
@@ -45,6 +43,7 @@ export class SliderComponent {
 
   private element = inject(ElementRef<HTMLElement>)['nativeElement'];
   private resizeObserver: ResizeObserver | null = null;
+  private autoSlideInterval: any;
 
   // Query the content projected into the component
   @ContentChild('previous', { static: false }) previousContent!: ElementRef;
@@ -53,16 +52,13 @@ export class SliderComponent {
   // Query the view elements in the template
   @ViewChild('sliderContainer', { static: true }) sliderContainer!: ElementRef;
   @ViewChild('slideContainer', { static: true }) slideContainer!: ElementRef;
-  @ViewChild('slide', { static: true }) slide!: ElementRef;
-
-  // Store the interval reference to clear it later
-  private autoSlideInterval: any;
 
   // Constructor
   constructor() {
     effect(() => {
       if (this.currentSlide() >= 0) {
-        this.setHeight(); // Adjust height on slide change
+        console.log(this.currentSlide());
+        this.setHeight();
       }
     });
   }
@@ -70,38 +66,28 @@ export class SliderComponent {
   // -------------------------- LIFECYCLE HOOKS --------------------------
 
   ngOnInit() {
-    if (this.loop) this.startAutoLoop(); // Start the auto loop
-    // Resize observer to adjust the slider height on resize
-    this.resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        this.setHeight(); // Adjust the height when the container is resized
-      }
-    });
+    if (this.loop) this.startAutoLoop();
 
+    this.resizeObserver = new ResizeObserver(() => {
+      this.setHeight();
+    });
     this.resizeObserver.observe(this.sliderContainer.nativeElement);
   }
 
-  ngAfterContentInit() {
-    this.hasPrevious = Boolean(this.previousContent);
-    this.hasNext = Boolean(this.nextContent);
-  }
-
-  // Cleanup when component is destroyed
   ngOnDestroy() {
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect(); // Stop observing the resize events
-    }
-    if (this.autoSlideInterval) {
-      clearInterval(this.autoSlideInterval); // Clear the auto-slide interval
-    }
+    if (this.resizeObserver) this.resizeObserver.disconnect();
+    if (this.autoSlideInterval) clearInterval(this.autoSlideInterval);
   }
 
-  // -------------------------- DOM & CONTENT HANDLING --------------------------
+  ngAfterViewInit() {
+    this.setHeight();
+  }
 
   // Set the height of the slider container based on the current slide
   setHeight() {
     const slide_page =
       this.element.querySelectorAll('.slide')[this.currentSlide()];
+    console.log(slide_page.clientHeight);
     if (slide_page) {
       this.slideContainer.nativeElement.style.height =
         slide_page.clientHeight + 'px';
@@ -111,30 +97,53 @@ export class SliderComponent {
   // -------------------------- SLIDE NAVIGATION --------------------------
 
   nextSlide() {
-    if (this.currentSlide() < this.slides.length - 1) {
-      this.currentSlide.update((prev) => prev + 1);
-    } else if (this.loop) {
-      // Loop back to the first slide after reaching the last one
-      this.currentSlide.set(0);
-    }
+    const newIndex = this.currentSlide() + 1;
+    this.transitionToSlide(newIndex);
 
-    if (this.loop) this.resetAutoLoop(); // Reset the auto loop after manual navigation
+    if (this.loop) this.resetAutoLoop();
   }
 
   prevSlide() {
-    if (this.currentSlide() > 0) {
-      this.currentSlide.update((prev) => prev - 1);
-    } else if (this.loop) {
-      // Loop back to the last slide if at the first slide
-      this.currentSlide.set(this.slides.length - 1);
-    }
+    const newIndex = this.currentSlide() - 1;
+    this.transitionToSlide(newIndex);
 
-    if (this.loop) this.resetAutoLoop(); // Reset the auto loop after manual navigation
+    if (this.loop) this.resetAutoLoop();
   }
 
   goToSlide(index: number) {
+    this.transitionToSlide(index);
+    if (this.loop) this.resetAutoLoop();
+  }
+
+  // -------------------------- SLIDE TRANSITIONS --------------------------
+
+  transitionToSlide(index: number) {
     this.currentSlide.set(index);
-    if (this.loop) this.resetAutoLoop(); // Reset the auto loop after manual navigation
+
+    const width = this.sliderContainer.nativeElement.clientWidth;
+    this.slideContainer.nativeElement.style.transition = 'all 300ms';
+    this.slideContainer.nativeElement.style.transform = `translateX(-${
+      width * index
+    }px)`;
+
+    // Adjust index after transition for infinite loop effect
+    setTimeout(() => {
+      if (index === 0) {
+        this.currentSlide.set(this.slides.length);
+        this.removeTransition();
+      } else if (index === this.slides.length + 1) {
+        this.currentSlide.set(1);
+        this.removeTransition();
+      }
+    }, 300);
+  }
+
+  removeTransition() {
+    const width = this.sliderContainer.nativeElement.clientWidth;
+    this.slideContainer.nativeElement.style.transition = 'height 300ms';
+    this.slideContainer.nativeElement.style.transform = `translateX(-${
+      width * this.currentSlide()
+    }px)`;
   }
 
   // -------------------------- DRAGGING HANDLING --------------------------
@@ -146,57 +155,85 @@ export class SliderComponent {
     this.startX = event.clientX;
   }
 
-  // Handle mouse up event (end dragging)
-  onMouseUp(event: MouseEvent) {
-    this.sliderContainer.nativeElement.style.cursor = 'grab';
-
-    if (!this.isDragging) return;
-    this.isDragging = false;
-    this.sliderContainer.nativeElement.style.transition =
-      'transform 0.3s ease-out';
-
-    const threshold = 100; // Minimum drag distance to change slides
-    if (this.offsetX < -threshold) {
-      this.nextSlide();
-      this.resetPosition();
-    } else if (this.offsetX > threshold) {
-      this.prevSlide();
-      this.resetPosition();
-    } else {
-      this.resetPosition();
-      this.slideContainer.nativeElement.style.transform = `translateX(${
-        -this.currentSlide() * 100
-      }%)`; // Correct position of slides
-    }
-  }
-
-  // Handle mouse move event (during dragging)
+  // Handle mouse move event (while dragging)
   onMouseMove(event: MouseEvent) {
     if (!this.isDragging) return;
-    const diffX = event.clientX - this.startX; // Calculate the difference in X position
+    const diffX = event.clientX - this.startX;
     this.offsetX = diffX;
 
-    // Move the slides during dragging, but only if it's within bounds
-    if (
-      (this.currentSlide() < this.slides.length - 1 && diffX < 0) || // Dragging left (next slide)
-      (this.currentSlide() > 0 && diffX > 0) // Dragging right (previous slide)
-    ) {
-      this.slideContainer.nativeElement.style.transform = `translateX(${
-        -this.sliderContainer.nativeElement.clientWidth * this.currentSlide() +
-        diffX
-      }px)`; // Update the position of the slides
+    const width = this.sliderContainer.nativeElement.clientWidth;
+
+    this.slideContainer.nativeElement.style.transition = 'none';
+
+    this.slideContainer.nativeElement.style.transform = `translateX(${
+      -width * this.currentSlide() + diffX
+    }px)`;
+  }
+
+  // Handle mouse up event (end dragging)
+  onMouseUp() {
+    if (!this.isDragging) return;
+    this.isDragging = false;
+    this.sliderContainer.nativeElement.style.cursor = 'grab';
+    if (this.offsetX < -100) {
+      this.nextSlide();
+    } else if (this.offsetX > 100) {
+      this.prevSlide();
+    } else {
+      this.transitionToSlide(this.currentSlide());
+      this.resetPosition();
     }
+    this.resetPosition();
+  }
+
+  // Handle touch start event
+  onTouchStart(event: TouchEvent) {
+    this.sliderContainer.nativeElement.style.cursor = 'grabbing';
+    this.isDragging = true;
+    this.startX = event.touches[0].clientX; // Record the initial touch position
+  }
+
+  // Handle touch move event
+  onTouchMove(event: TouchEvent) {
+    if (!this.isDragging) return;
+
+    const diffX = event.touches[0].clientX - this.startX; // Calculate the difference
+    this.offsetX = diffX;
+
+    const width = this.sliderContainer.nativeElement.clientWidth;
+
+    this.slideContainer.nativeElement.style.transition = 'none';
+    this.slideContainer.nativeElement.style.transform = `translateX(${
+      -width * this.currentSlide() + diffX
+    }px)`; // Move the slide container
+  }
+
+  // Handle touch start end
+  onTouchEnd() {
+    if (!this.isDragging) return;
+    this.isDragging = false;
+    this.sliderContainer.nativeElement.style.cursor = 'grab';
+
+    // Determine if swipe was significant enough to change slides
+    if (this.offsetX < -100) {
+      this.nextSlide(); // Swipe left
+    } else if (this.offsetX > 100) {
+      this.prevSlide(); // Swipe right
+    } else {
+      this.transitionToSlide(this.currentSlide()); // Reset position
+    }
+
+    this.resetPosition();
   }
 
   // Reset the dragging position
   resetPosition() {
-    this.startX = 0;
     this.offsetX = 0;
   }
 
   // -------------------------- AUTO LOOP HANDLING --------------------------
 
-  // Start the auto loop (every 5 seconds)
+  // Start the auto loop (default every 5 seconds)
   private startAutoLoop() {
     this.autoSlideInterval = setInterval(() => {
       this.nextSlide();

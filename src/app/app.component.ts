@@ -14,10 +14,10 @@ import { Slide2Component } from './ui/components/slide2/slide2.component';
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
-  activeSlide: WritableSignal<number> = signal(0);
+  activeSlide: WritableSignal<number> = signal(1);
 
   click() {
-    this.activeSlide.set(2);
+    this.activeSlide.set(3);
   }
 
   title = 'slider';

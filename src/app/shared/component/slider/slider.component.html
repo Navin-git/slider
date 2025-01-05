@@ -2,9 +2,12 @@
   class="slider-container"
   #sliderContainer
   (mousedown)="onMouseDown($event)"
-  (mouseup)="onMouseUp($event)"
-  (mouseleave)="onMouseUp($event)"
+  (mouseup)="onMouseUp()"
+  (mouseleave)="onMouseUp()"
   (mousemove)="onMouseMove($event)"
+  (touchstart)="onTouchStart($event)"
+  (touchmove)="onTouchMove($event)"
+  (touchend)="onTouchEnd()"
 >
   <div
     #slideContainer
@@ -12,6 +15,11 @@
     [ngStyle]="{ transform: 'translateX(' + -currentSlide() * 100 + '%)' }"
     [style]="{ cursor: 'drag' }"
   >
+    <!-- Prepend last slide for infinite scroll -->
+    <div class="slide">
+      <ng-container [ngComponentOutlet]="slides[slides.length - 1].component">
+      </ng-container>
+    </div>
     @for (slide of slides; track $index) {
     <div class="slide">
       <!-- Slide Component -->
@@ -22,21 +30,22 @@
       </ng-container>
     </div>
     }
+    <!-- Append first slide for infinite scroll -->
+    <div class="slide">
+      <ng-container [ngComponentOutlet]="slides[0].component"> </ng-container>
+    </div>
   </div>
 
   <!-- Navigation buttons -->
   @if(navigator){
   <div class="navigation">
-    <button [disabled]="currentSlide() === 0" (click)="prevSlide()">
+    <button (click)="prevSlide()">
       <div *ngIf="hasPrevious; else defaultPrevious">
         <ng-content select="[slider-navigator-previous]"></ng-content>
       </div>
       <ng-template #defaultPrevious> &#8249; Previous </ng-template>
     </button>
-    <button
-      [disabled]="currentSlide() === slides.length - 1"
-      (click)="nextSlide()"
-    >
+    <button (click)="nextSlide()">
       <div *ngIf="hasNext; else defaultNext">
         <ng-content select="[slider-navigator-next]"></ng-content>
       </div>
@@ -50,9 +59,26 @@
   <div class="bullet-points">
     <span
       class="bullet"
-      *ngFor="let slide of slides; let i = index"
-      [class.active]="i === currentSlide()"
-      (click)="goToSlide(i)"
+      [class.active]="
+        currentSlide() === 1 || currentSlide() === slides.length + 1
+      "
+      (click)="goToSlide(1)"
+    >
+    </span>
+    @for (item of slides; track $index) {
+    <span
+      class="bullet"
+      *ngIf="$index != 0 && $index != slides.length - 1"
+      [class.active]="$index + 1 === currentSlide()"
+      (click)="goToSlide($index + 1)"
+    >
+    </span>
+    }
+
+    <span
+      class="bullet"
+      [class.active]="currentSlide() === 0 || currentSlide() === slides.length"
+      (click)="goToSlide(slides.length)"
     >
     </span>
   </div>

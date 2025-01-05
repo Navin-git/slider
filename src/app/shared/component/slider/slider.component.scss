@@ -1,0 +1,75 @@
+/* Slider Container */
+.slider-container {
+  position: relative;
+  width: 100%;
+  height: fit-content;
+  max-width: 600px;
+  overflow: hidden;
+  margin: auto;
+  cursor: grab;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
+
+/* Slides Wrapper */
+.slides {
+  display: flex;
+  align-items: start;
+  transition-duration: 0.5s !important;
+}
+
+/* Individual Slide */
+.slide {
+  min-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+/* Navigation Buttons */
+.navigation {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+
+  button {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+/* Bullet Points */
+.bullet-points {
+  text-align: center;
+  margin-top: 10px;
+  position: relative;
+  z-index: 1;
+
+  .bullet {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin: 0 5px;
+    background-color: gray;
+    border-radius: 50%;
+    cursor: pointer;
+
+    &.active {
+      background-color: black;
+    }
+  }
+}

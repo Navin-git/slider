@@ -1,0 +1,60 @@
+<div
+  class="slider-container"
+  #sliderContainer
+  (mousedown)="onMouseDown($event)"
+  (mouseup)="onMouseUp($event)"
+  (mouseleave)="onMouseUp($event)"
+  (mousemove)="onMouseMove($event)"
+>
+  <div
+    #slideContainer
+    class="slides"
+    [ngStyle]="{ transform: 'translateX(' + -currentSlide() * 100 + '%)' }"
+    [style]="{ cursor: 'drag' }"
+  >
+    @for (slide of slides; track $index) {
+    <div class="slide">
+      <!-- Slide Component -->
+      <ng-container
+        [ngComponentOutlet]="slide.component"
+        [ngComponentOutletInputs]="slide.inputs"
+      >
+      </ng-container>
+    </div>
+    }
+  </div>
+
+  <!-- Navigation buttons -->
+  @if(navigator){
+  <div class="navigation">
+    <button [disabled]="currentSlide() === 0" (click)="prevSlide()">
+      <div *ngIf="hasPrevious; else defaultPrevious">
+        <ng-content select="[slider-navigator-previous]"></ng-content>
+      </div>
+      <ng-template #defaultPrevious> &#8249; Previous </ng-template>
+    </button>
+    <button
+      [disabled]="currentSlide() === slides.length - 1"
+      (click)="nextSlide()"
+    >
+      <div *ngIf="hasNext; else defaultNext">
+        <ng-content select="[slider-navigator-next]"></ng-content>
+      </div>
+      <ng-template #defaultNext> Next &#8250; </ng-template>
+    </button>
+  </div>
+  }
+
+  <!-- Bullet points -->
+  @if(bullets){
+  <div class="bullet-points">
+    <span
+      class="bullet"
+      *ngFor="let slide of slides; let i = index"
+      [class.active]="i === currentSlide()"
+      (click)="goToSlide(i)"
+    >
+    </span>
+  </div>
+  }
+</div>

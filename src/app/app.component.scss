@@ -1,0 +1,22 @@
+.custom-slide-content {
+  text-align: center;
+  padding: 20px;
+  width: 100%;
+}
+
+.go-to {
+  display: flex;
+  justify-content: center;
+  margin-block: 20px;
+
+  &-button {
+    margin: auto;
+    background-color: #4facfe;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 10px 50px;
+    border: none;
+    border-radius: 999px;
+  }
+}

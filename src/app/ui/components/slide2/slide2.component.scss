@@ -1,0 +1,40 @@
+.hero {
+  position: relative;
+  width: 100%;
+  height: 300px; /* Full viewport height */
+  background-image: url("https://officebanao.com/wp-content/uploads/2024/03/modern-office-room-with-white-walls-1024x683.jpg"); /* Path to your image */
+  background-size: cover; /* Ensure the image covers the entire area */
+  background-position: center; /* Center the image */
+  display: flex; /* Flexbox to center content */
+  align-items: center; /* Vertically center content */
+  justify-content: center; /* Horizontally center content */
+  color: white; /* Text color */
+  text-align: center; /* Center align text */
+}
+
+.hero-content {
+  max-width: 600px; /* Optional: Limit the width of the content */
+  padding: 20px; /* Add some spacing */
+  background: rgba(
+    0,
+    0,
+    0,
+    0.5
+  ); /* Optional: Transparent background for better readability */
+  border-radius: 10px; /* Optional: Rounded corners */
+}
+
+.cta-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #ff6347; /* Button background */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.cta-button:hover {
+  background-color: #e5533d; /* Button hover effect */
+}
